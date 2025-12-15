@@ -1,38 +1,49 @@
-# --- Build Stage ---
-    FROM rust:latest AS builder
+# -----------------------------------
+# STAGE 1: Builder (Musl Toolchain)
+# -----------------------------------
+# Use a specific Rust version and install the musl target toolchain
+FROM rust:1.77.0 AS builder
 
-    WORKDIR /usr/src/app
+# Install musl target
+RUN rustup target add x86_64-unknown-linux-musl
 
-    # Copy files
-    COPY . .
+WORKDIR /usr/src/app
 
-    # Build release binary
-    # We use --locked to ensure reproducible builds from Cargo.lock
-    RUN cargo build --release --locked
+# Copy source code
+COPY . .
 
-    # --- Runtime Stage ---
-    FROM debian:bullseye-slim
+# Build the release binary targeting musl (static linking)
+# This will produce a self-contained executable.
+RUN cargo build --release --locked --target x86_64-unknown-linux-musl
 
-    # Install minimal runtime dependencies
-    RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+# -----------------------------------
+# STAGE 2: Final Runtime Image (Minimal)
+# -----------------------------------
+# Use an extremely small image like Alpine or a minimal scratch-like image
+# Alpine is used here for simplicity as it's common for musl builds
+FROM alpine:3.18
 
-    WORKDIR /app
+# Install minimal OS dependencies if needed (Musl libc is included in the binary)
+RUN apk add --no-cache openssl-dev
 
-    # Copy the compiled binary and the persistent data directory
-    COPY --from=builder /usr/src/app/target/release/asdf-vanity-grinder .
+# Set the working directory
+WORKDIR /app
 
-    # Create directory for persistent data (matching Render mount path)
-    RUN mkdir -p /data
+# Copy the statically compiled binary from the builder stage
+# The path includes the target we compiled for: x86_64-unknown-linux-musl
+COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/asdf-vanity-grinder .
 
-    # Expose the internal port for the HTTP server
-    EXPOSE 8080
+# Create persistent data directory
+RUN mkdir -p /data
 
-    # Command to start the pool server
-    # Note: We use environment variables (VANITY_*) which Render will inject.
-    CMD ["./asdf-vanity-grinder", "pool", \
-         "--port", "8080", \
-         "--bind", "0.0.0.0", \
-         "--file", "/data/vanity_pool.json", \
-         "--min-pool", "${VANITY_MIN_POOL}", \
-         "--api-key", "${VANITY_API_KEY}", \
-         "--threads", "${VANITY_THREADS}"]
+# Expose the internal port
+EXPOSE 8080
+
+# Command to start the pool server
+CMD ["./asdf-vanity-grinder", "pool", \
+     "--port", "8080", \
+     "--bind", "0.0.0.0", \
+     "--file", "/data/vanity_pool.json", \
+     "--min-pool", "${VANITY_MIN_POOL}", \
+     "--api-key", "${VANITY_API_KEY}", \
+     "--threads", "${VANITY_THREADS}"]
