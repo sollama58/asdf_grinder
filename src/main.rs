@@ -476,7 +476,6 @@ fn run_pool_server(
     let api_key_hash = api_key.as_ref().map(|key| {
         let mut hasher = Sha256::new();
         hasher.update(key.as_bytes());
-        hex::encode(hasher.finalize());
         hex::encode(hasher.finalize())
     });
 
