@@ -36,14 +36,15 @@ COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/asdf-v
 # Create persistent data directory
 RUN mkdir -p /data
 
-# Expose the internal portttt
+# Expose the internal port
 EXPOSE 8080
 
 # Command to start the pool server
+# FIXED: Removed explicit env vars arguments. The app uses 'clap' which
+# automatically reads VANITY_MIN_POOL, VANITY_API_KEY, and VANITY_THREADS
+# from the environment. This avoids the "invalid digit found in string" error
+# caused by Docker not expanding variables in exec-form CMD.
 CMD ["./asdf-vanity-grinder", "pool", \
      "--port", "8080", \
      "--bind", "0.0.0.0", \
-     "--file", "/data/vanity_pool.json", \
-     "--min-pool", "${VANITY_MIN_POOL}", \
-     "--api-key", "${VANITY_API_KEY}", \
-     "--threads", "${VANITY_THREADS}"]
+     "--file", "/data/vanity_pool.json"]

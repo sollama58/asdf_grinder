@@ -67,7 +67,7 @@ enum Commands {
         suffix: String,
 
         /// Number of threads for generation (default: all cores)
-        #[arg(long)]
+        #[arg(long, env = "VANITY_THREADS")]
         threads: Option<usize>,
 
         /// Minimum pool size before warning
@@ -476,6 +476,7 @@ fn run_pool_server(
     let api_key_hash = api_key.as_ref().map(|key| {
         let mut hasher = Sha256::new();
         hasher.update(key.as_bytes());
+        hex::encode(hasher.finalize());
         hex::encode(hasher.finalize())
     });
 
