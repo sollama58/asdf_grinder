@@ -14,7 +14,7 @@ COPY . .
 
 # Build the release binary targeting musl (static linking)
 # This will produce a self-contained executable.
-RUN cargo build --release --locked --target x86_64-unknown-linux-musl
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
 # -----------------------------------
 # STAGE 2: Final Runtime Image (Minimal)
