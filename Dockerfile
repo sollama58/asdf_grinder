@@ -2,7 +2,7 @@
 # STAGE 1: Builder (Musl Toolchain)
 # -----------------------------------
 # Use a specific Rust version and install the musl target toolchain
-FROM rust:stable AS builder
+FROM rust AS builder
 
 # Install musl target
 RUN rustup target add x86_64-unknown-linux-musl
