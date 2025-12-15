@@ -36,7 +36,7 @@ COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/asdf-v
 # Create persistent data directory
 RUN mkdir -p /data
 
-# Expose the internal port
+# Expose the internal portttt
 EXPOSE 8080
 
 # Command to start the pool server
